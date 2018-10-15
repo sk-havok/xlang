@@ -1,0 +1,15 @@
+namespace Compare
+{
+    [Windows.Foundation.Metadata.FastAbiAttribute]
+    runtimeclass Class
+    {
+        Class(String a);
+
+        static String StaticMethod();
+
+        String Method();
+
+    }
+
+    delegate void Delegate(String arg);
+}
