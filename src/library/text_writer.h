@@ -4,6 +4,8 @@
 
 namespace xlang::text
 {
+    // TODO: use ADL rather than CRTP? avoid having to have a template base class at all?
+
     template <typename T>
     struct writer_base
     {
@@ -18,7 +20,11 @@ namespace xlang::text
         template <typename... Args>
         void write(std::string_view const& value, Args const&... args)
         {
-            assert(count_placeholders(value) == sizeof...(Args));
+#if defined(XLANG_DEBUG)
+            auto expected = count_placeholders(value);
+            auto actual = sizeof...(Args);
+            XLANG_ASSERT(expected == actual);
+#endif
             write_segment(value, args...);
         }
 
@@ -31,7 +37,7 @@ namespace xlang::text
 #endif
             auto const size = m_first.size();
 
-            assert(count_placeholders(value) == sizeof...(Args));
+            XLANG_ASSERT(count_placeholders(value) == sizeof...(Args));
             write_segment(value, args...);
 
             std::string result{ m_first.data() + size, m_first.size() - size };
@@ -76,6 +82,11 @@ namespace xlang::text
         void write(F const& f)
         {
             f(*static_cast<T*>(this));
+        }
+
+        void write(uint32_t const value)
+        {
+            write(std::to_string(value));
         }
 
         void write(int32_t const value)
@@ -187,7 +198,7 @@ namespace xlang::text
         void write_segment(std::string_view const& value, First const& first, Rest const&... rest)
         {
             auto offset = value.find_first_of("^%@");
-            assert(offset != std::string_view::npos);
+            XLANG_ASSERT(offset != std::string_view::npos);
             write(value.substr(0, offset));
 
             if (value[offset] == '^')
@@ -220,7 +231,7 @@ namespace xlang::text
                     }
                     else
                     {
-                        assert(false); // '@' placeholders are only for text.
+                        XLANG_ASSERT(false); // '@' placeholders are only for text.
                     }
                 }
 
