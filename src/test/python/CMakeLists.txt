@@ -20,12 +20,8 @@ set(included_namespaces
 )
 
 set(excluded_namespaces
-    Windows.Foundation.Deferral
     Windows.Foundation.Diagnostics
-    Windows.Foundation.IPropertyValue
-    Windows.Foundation.IRef
     Windows.Foundation.Metadata
-    Windows.Foundation.PropertyValue
 )
 
 set(cmdline "-output ${output_dir}")

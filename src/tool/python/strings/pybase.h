@@ -298,6 +298,110 @@ namespace py
             return result > 0;
         }
     };
+    
+    template <>
+    struct converter<int8_t>
+    {
+        static PyObject* convert(int8_t value) noexcept
+        {
+            return PyLong_FromLong(static_cast<int32_t>(value));
+        }
+
+        static int8_t convert_to(PyObject* obj)
+        {
+            int32_t result = PyLong_AsLong(obj);
+
+            if (result == -1 && PyErr_Occurred())
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            if (result < INT8_MIN || result > INT8_MAX)
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            return static_cast<int8_t>(result);
+        }
+    };
+
+    template <>
+    struct converter<uint8_t>
+    {
+        static PyObject* convert(uint8_t value) noexcept
+        {
+            return PyLong_FromLong(static_cast<int32_t>(value));
+        }
+
+        static uint8_t convert_to(PyObject* obj)
+        {
+            int32_t result = PyLong_AsLong(obj);
+
+            if (result == -1 && PyErr_Occurred())
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            if (result < 0 || result > UINT8_MAX)
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            return static_cast<uint8_t>(result);
+        }
+    };
+
+    template <>
+    struct converter<int16_t>
+    {
+        static PyObject* convert(int16_t value) noexcept
+        {
+            return PyLong_FromLong(static_cast<int32_t>(value));
+        }
+
+        static int16_t convert_to(PyObject* obj)
+        {
+            int32_t result = PyLong_AsLong(obj);
+
+            if (result == -1 && PyErr_Occurred())
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            if (result < INT16_MIN || result > INT16_MAX)
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            return static_cast<int16_t>(result);
+        }
+    };
+
+    template <>
+    struct converter<uint16_t>
+    {
+        static PyObject* convert(uint16_t value) noexcept
+        {
+            return PyLong_FromLong(static_cast<int32_t>(value));
+        }
+
+        static uint16_t convert_to(PyObject* obj)
+        {
+            int32_t result = PyLong_AsLong(obj);
+
+            if (result == -1 && PyErr_Occurred())
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            if (result < 0 || result > UINT16_MAX)
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            return static_cast<uint16_t>(result);
+        }
+    };
 
     template <>
     struct converter<int32_t>
@@ -309,7 +413,7 @@ namespace py
 
         static int32_t convert_to(PyObject* obj)
         {
-            auto result = PyLong_AsLong(obj);
+            int32_t result = PyLong_AsLong(obj);
 
             if (result == -1 && PyErr_Occurred())
             {
@@ -330,7 +434,7 @@ namespace py
 
         static uint32_t convert_to(PyObject* obj)
         {
-            auto result = PyLong_AsUnsignedLong(obj);
+            uint32_t result = PyLong_AsUnsignedLong(obj);
 
             if (result == -1 && PyErr_Occurred())
             {
@@ -351,7 +455,7 @@ namespace py
 
         static int64_t convert_to(PyObject* obj)
         {
-            auto result = PyLong_AsLongLong(obj);
+            int64_t result = PyLong_AsLongLong(obj);
 
             if (result == -1 && PyErr_Occurred())
             {
@@ -372,7 +476,7 @@ namespace py
 
         static uint64_t convert_to(PyObject* obj)
         {
-            auto result = PyLong_AsUnsignedLongLong(obj);
+            uint64_t result = PyLong_AsUnsignedLongLong(obj);
 
             if (result == -1 && PyErr_Occurred())
             {
@@ -422,6 +526,26 @@ namespace py
             }
 
             return result;
+        }
+    };
+
+    template <>
+    struct converter<winrt::Windows::Foundation::IInspectable>
+    {
+        static PyObject* convert(winrt::Windows::Foundation::IInspectable value) noexcept
+        {
+            return wrap<winrt::Windows::Foundation::IInspectable>(value, winrt_type<winrt_base>::python_type);
+        }
+
+        static winrt::Windows::Foundation::IInspectable convert_to(PyObject* obj)
+        {
+            if (PyObject_IsInstance(obj, reinterpret_cast<PyObject*>(winrt_type<winrt_base>::python_type)) == 0)
+            {
+                throw winrt::hresult_invalid_argument();
+            }
+
+            auto wrapper = reinterpret_cast<winrt_wrapper_base*>(obj);
+            return as<winrt::Windows::Foundation::IInspectable>(wrapper);
         }
     };
 
