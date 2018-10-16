@@ -279,13 +279,30 @@ static PyType_Spec @_Type_spec =
             w.write("            % param% { % };\n", param.second->Type(), sequence, bind<write_out_param_init>(param));
             break;
         case param_category::pass_array:
-            w.write("            /*p*/ winrt::array_view<% const> param% { }; //= py::convert_to<winrt::array_view<% const>>(args, %);\n", param.second->Type(), sequence, param.second->Type(), sequence);
+        {
+            auto baz = std::get_if<ElementType>(&(param.second->Type().Type()));
+            if (baz && *baz == ElementType::Boolean)
+            {
+                w.write("            auto _param% = py::convert_pass_array<%>(args, %);\n", sequence, param.second->Type(), sequence);
+                w.write("            auto param% = winrt::array_view<const %>(_param%.begin(), _param%.end());\n", sequence, param.second->Type(), sequence, sequence);
+            }
+            else
+            {
+                w.write("            auto param% = py::convert_pass_array<%>(args, %);\n", sequence, param.second->Type(), sequence);
+            }
+            //if (auto et = std::get_if<ElementType>(param.second->Type().Type()))
+            //{
+
+            //}
+        }
+            //w.write("            auto param% = py::convert_pass_array<%>(args, %);\n", sequence, param.second->Type(), sequence);
+            //w.write("            winrt::array_view<const %> param%(_param%.begin(), _param%.end());\n", param.second->Type(), sequence, sequence, sequence);
             break;
         case param_category::fill_array:
             w.write("            /*f*/ winrt::array_view<%> param% { }; //= py::convert_to<winrt::array_view<% const>>(args, %);\n", param.second->Type(), sequence, param.second->Type(), sequence);
             break;
         case param_category::receive_array:
-            w.write("            /*r*/ winrt::com_array<%> param% { };\n", param.second->Type(), sequence);
+            w.write("            winrt::com_array<%> param% { };\n", param.second->Type(), sequence);
             break;
         default:
             throw_invalid("write_param_conversion not impl");
@@ -337,6 +354,12 @@ static PyType_Spec @_Type_spec =
         return name;
     }
 
+
+    void write_return_value_param(writer& w, std::string const& return_value)
+    {
+        w.write(", %", return_value);
+    }
+
     void write_method_overload_body(writer& w, TypeDef const& type, method_info const& info, method_signature signature)
     {
         auto guard{ w.push_generic_params(info.type_arguments) };
@@ -358,60 +381,54 @@ static PyType_Spec @_Type_spec =
             get_cpp_method_name(info.method),
             bind_list<write_param_name>(", ", signature.params()));
 
+        std::vector<std::string> return_values{};
+
         if (signature.return_signature())
         {
-            if (count_out_param(signature.params()) == 0)
-            {
-                auto format = R"(
-            return py::convert(return_value);
-)";
-                w.write(format);
-            }
-            else
-            {
-                {
-                    auto format = R"(
+            auto format = R"(
             PyObject* out_return_value = py::convert(return_value);
             if (!out_return_value) 
             { 
                 return nullptr;
-            };
-
+            }
 )";
-                    w.write(format);
-                }
+            w.write(format);
+            return_values.push_back("out_return_value");
+        }
 
-                int out_param_count = 1;
-                std::string tuple_pack_param;
+        for (auto&& param : signature.params())
+        {
+            if (!is_out_param(param))
+            {
+                continue;
+            }
 
-                for (auto&& param : signature.params())
-                {
-                    if (is_in_param(param))
-                    {
-                        continue;
-                    }
+            auto sequence = param.first.Sequence() - 1;
+            auto out_param = w.write_temp("out%", sequence);
 
-                    out_param_count++;
-                    auto sequence = param.first.Sequence() - 1;
-                    tuple_pack_param.append(", ");
-                    tuple_pack_param.append(w.write_temp("out%", sequence));
-
-                    auto format = R"(            PyObject* out% = py::convert(param%);
-            if (!out%) 
+            auto format = R"(
+            PyObject* % = py::convert(param%);
+            if (!%) 
             {
                 return nullptr;
             }
-
 )";
-                    w.write(format, sequence, sequence, sequence);
-                }
+            w.write(format, out_param, sequence, out_param);
+            return_values.push_back(out_param);
+        }
 
-                w.write("            return PyTuple_Pack(%, out_return_value%);\n", out_param_count, tuple_pack_param);
-            }
+        if (return_values.size() == 0)
+        {
+            w.write("\n            Py_RETURN_NONE;\n");
+        }
+        else if (return_values.size() == 1)
+        {
+            w.write("\n            return %;\n", return_values[0]);
         }
         else
         {
-            w.write("            Py_RETURN_NONE;\n");
+             auto x = w.write_temp("%", std::to_string(return_values.size()));
+            w.write("\n            return PyTuple_Pack(%, %);\n", x, bind_list(", ", return_values));
         }
 
         w.write(R"(        }

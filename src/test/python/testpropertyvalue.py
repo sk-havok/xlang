@@ -117,6 +117,15 @@ class TestPropertyValue(unittest.TestCase):
         self.assertEqual(s.Width, 6)
         self.assertEqual(s.Height, 8)
 
+    def test_create_uint8_array(self):
+        o = _pyrt.PropertyValue.CreateUInt8Array([1,2,3,4,5])
+        ipv = _pyrt.IPropertyValue(o)
+        self.assertEqual(ipv.get_Type(), 1025)
+        a = ipv.GetUInt8Array()
+        self.assertEqual(len(a), 5)
+        for x in range(0,5):
+            self.assertEqual(a[x], x+1)
+
 if __name__ == '__main__':
     _pyrt.init_apartment()
     unittest.main()

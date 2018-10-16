@@ -55,6 +55,18 @@ namespace py
         using type = void;
     };
 
+    template <typename T>
+    struct com_array_checker
+    {
+        static constexpr bool value = false;
+    };
+
+    template <typename T>
+    struct com_array_checker<winrt::com_array<T>>
+    {
+        static constexpr bool value = true;
+    };
+
     template<typename T>
     constexpr bool is_basic_category_v = std::is_same_v<winrt::impl::category_t<T>, winrt::impl::basic_category>;
 
@@ -75,6 +87,9 @@ namespace py
 
     template<typename T>
     constexpr bool is_struct_category_v = struct_checker<typename winrt::impl::category<T>::type>::value;
+
+    template<typename T>
+    constexpr bool is_com_array_v = com_array_checker<typename T>::value;
 
     struct winrt_wrapper_base
     {
@@ -298,7 +313,7 @@ namespace py
             return result > 0;
         }
     };
-    
+
     template <>
     struct converter<int8_t>
     {
@@ -625,9 +640,16 @@ namespace py
     }
 
     template<typename T>
-    PyObject* convert(T instance) noexcept
+    PyObject* convert_receive_array(winrt::com_array<T> const& instance) noexcept;
+
+    template<typename T>
+    PyObject* convert(T const& instance) noexcept
     {
-        if constexpr (is_class_category_v<T> || is_interface_category_v<T> || is_pinterface_category_v<T>)
+        if constexpr (is_com_array_v<T>)
+        {
+            return convert_receive_array(instance);
+        }
+        else if constexpr (is_class_category_v<T> || is_interface_category_v<T> || is_pinterface_category_v<T>)
         {
             return wrap(instance);
         }
@@ -712,7 +734,7 @@ namespace py
             }
 
             if (PyDict_Check(arg))
-            { 
+            {
                 return converter<T>::convert_to(arg);
             }
 
@@ -732,5 +754,97 @@ namespace py
     auto convert_to(PyObject* args, int index)
     {
         return convert_to<T>(PyTuple_GetItem(args, index));
+    }
+
+    template<typename T>
+    PyObject* convert_receive_array(winrt::com_array<T> const& instance) noexcept
+    {
+        PyObject* list = PyList_New(instance.size());
+        if (list == nullptr)
+        {
+            return nullptr;
+        }
+
+        for (uint32_t index = 0; index < instance.size(); index++)
+        {
+            PyObject* item = convert(instance[index]);
+            if (item == nullptr)
+            {
+                return nullptr;
+            }
+
+            if (PyList_SetItem(list, index, item) == -1)
+            {
+                return nullptr;
+            }
+        }
+
+        return list;
+    }
+
+    template<typename T>
+    auto convert_pass_array(PyObject* arg)
+    {
+        if (!arg || !PyList_Check(arg))
+        {
+            throw winrt::hresult_invalid_argument();
+        }
+
+        Py_ssize_t list_size = PyList_Size(arg);
+        if (list_size == -1)
+        {
+            // TODO: propagate python error 
+            throw winrt::hresult_invalid_argument();
+        }
+
+        if constexpr (std::is_same_v<T, bool>)
+        {
+            winrt::com_array<bool> items(static_cast<uint32_t>(list_size));
+
+            for (Py_ssize_t index = 0; index < list_size; index++)
+            {
+                PyObject* item = PyList_GetItem(arg, index);
+                if (item == nullptr)
+                {
+                    // TODO: propagate python error 
+                    throw winrt::hresult_invalid_argument();
+                }
+
+                items[static_cast<uint32_t>(index)] = convert_to<T>(item);
+            }
+
+            return std::move(items);
+        }
+        else
+        {
+            std::vector<T> items{};
+
+            for (Py_ssize_t index = 0; index < list_size; index++)
+            {
+                PyObject* item = PyList_GetItem(arg, index);
+                if (item == nullptr)
+                {
+                    // TODO: propagate python error 
+                    throw winrt::hresult_invalid_argument();
+                }
+
+                if constexpr (std::is_same_v<T, winrt::hstring>)
+                {
+                    items.emplace_back(convert_to<T>(item));
+                }
+                else
+                {
+                    items.push_back(convert_to<T>(item));
+                }
+            }
+
+            return std::move(items);
+        }
+    }
+
+    template<typename T>
+    auto convert_pass_array(PyObject* args, int index)
+    {
+        return convert_pass_array<T>(PyTuple_GetItem(args, index));
     }
 }
