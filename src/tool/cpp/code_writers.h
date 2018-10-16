@@ -2436,6 +2436,11 @@ inline void* %::detach_abi() noexcept
 
     inline void write_fast_class_inline_definitions(writer& w, TypeDef const& type)
     {
+        if (!is_fast_class(type))
+        {
+            return;
+        }
+
         write_type_namespace(w, type.TypeNamespace());
 
         auto type_name = type.TypeName();
@@ -2457,6 +2462,7 @@ inline void* %::detach_abi() noexcept
 )";
 
                     w.write(format,
+                        type_name,
                         type_name,
                         type_name,
                         type_name);
@@ -3641,7 +3647,8 @@ namespace winrt::@::implementation
         auto format = R"(#include "%.h"
 
 namespace winrt::@::implementation
-{%}
+{
+%}
 )";
 
         w.write(format,

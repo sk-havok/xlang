@@ -4,16 +4,16 @@
 namespace winrt::Component::implementation
 {
     template <typename D, typename... I>
-    struct WINRT_EBO Class_base : implements<D, Windows::Foundation::IInspectable, I...>
+    struct WINRT_EBO Class_base : implements<D, Component::IClass, I...>
     {
         using base_type = Class_base;
-        using fast_class_type = Component::Class;
+        using class_type = Component::Class;
         using implements_type = typename Class_base::implements_type;
         using implements_type::implements_type;
         
-        operator impl::producer_ref<fast_class_type> const() const noexcept
+        operator impl::producer_ref<class_type> const() const noexcept
         {
-            return { to_abi<Windows::Foundation::IInspectable>(this) };
+            return { to_abi<default_interface<class_type>>(this) };
         }
 
         hstring GetRuntimeClassName() const
@@ -25,7 +25,7 @@ namespace winrt::Component::implementation
 namespace winrt::Component::factory_implementation
 {
     template <typename D, typename T, typename... I>
-    struct WINRT_EBO ClassT : implements<D, fast_factory<Component::Class>, I...>
+    struct WINRT_EBO ClassT : implements<D, Windows::Foundation::IActivationFactory, I...>
     {
         using instance_type = Component::Class;
 
@@ -33,29 +33,13 @@ namespace winrt::Component::factory_implementation
         {
             return L"Component.Class";
         }
-            hstring Method(Component::Class const& winrt_impl_this) const
+            Component::Class CreateInstance(hstring const& a)
         {
-            return get_self<implementation::Class>(winrt_impl_this)->Method();
+            return make<T>(a);
         }
-        hstring Property(Component::Class const& winrt_impl_this) const
+        Windows::Foundation::IInspectable ActivateInstance() const
         {
-            return get_self<implementation::Class>(winrt_impl_this)->Property();
-        }
-        void Property(Component::Class const& winrt_impl_thishstring const& value) const
-        {
-            return get_self<implementation::Class>(winrt_impl_this)->Property(value);
-        }
-        Component::Class CreateInstance(hstring const& a) const
-        {
-            return { a };
-        }
-        hstring StaticMethod() const
-        {
-            return implementation::Class::StaticMethod();
-        }
-        [[noreturn]] Component::Class ActivateInstance() const
-        {
-            throw hresult_not_implemented();
+            return make<T>();
         }
 };
 }

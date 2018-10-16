@@ -53,7 +53,7 @@ namespace winrt::impl
     };
     template <> struct guid_storage<Component::IClass>
     {
-        static constexpr guid value{ 0xAC55B9DC,0x9198,0x55D4,{ 0x92,0x4C,0x81,0x4B,0x45,0x76,0x0A,0xB5 } };
+        static constexpr guid value{ 0xE666A074,0x1C35,0x531A,{ 0x83,0x06,0x74,0x8B,0xE3,0x70,0x43,0xC6 } };
     };
     template <> struct guid_storage<Component::IClassFactory>
     {
@@ -75,6 +75,7 @@ namespace winrt::impl
     {
         struct type : inspectable_abi
         {
+            virtual int32_t WINRT_CALL ReturnObject(void**) noexcept = 0;
             virtual int32_t WINRT_CALL Method(void**) noexcept = 0;
             virtual int32_t WINRT_CALL get_Property(void**) noexcept = 0;
             virtual int32_t WINRT_CALL put_Property(void*) noexcept = 0;
@@ -101,21 +102,10 @@ namespace winrt::impl
             virtual int32_t WINRT_CALL Invoke(void*) noexcept = 0;
         };
     };
-    template <> struct abi<fast_factory<Component::Class>>
-    {
-        struct type : inspectable_abi
-        {
-            virtual int32_t WINRT_CALL ActivateInstance(void**) noexcept = 0;
-            virtual int32_t WINRT_CALL Method(void*, void**) noexcept = 0;
-            virtual int32_t WINRT_CALL get_Property(void*, void**) noexcept = 0;
-            virtual int32_t WINRT_CALL put_Property(void*, void*) noexcept = 0;
-            virtual int32_t WINRT_CALL CreateInstance(void*, void**) noexcept = 0;
-            virtual int32_t WINRT_CALL StaticMethod(void**) noexcept = 0;
-        };
-    };
     template <typename D>
     struct consume_Component_IClass
     {
+        Component::Class ReturnObject() const;
         hstring Method() const;
         hstring Property() const;
         void Property(param::hstring const& value) const;
@@ -141,18 +131,5 @@ namespace winrt::impl
     template <> struct consume<Component::IClassStatics>
     {
         template <typename D> using type = consume_Component_IClassStatics<D>;
-    };
-    template <typename D>
-    struct consume_Component_Class
-    {
-        hstring Method(Component::Class const&) const;
-        hstring Property(Component::Class const&) const;
-        void Property(Component::Class const&, param::hstring const& value) const;
-        Component::Class CreateInstance(param::hstring const& a) const;
-        hstring StaticMethod() const;
-    };
-    template <> struct consume<fast_factory<Component::Class>>
-    {
-        template <typename D> using type = consume_Component_Class<D>;
     };
 }

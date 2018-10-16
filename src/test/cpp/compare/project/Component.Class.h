@@ -7,6 +7,7 @@ namespace winrt::Component::implementation
     {
         Class() = default;
 
+        Component::Class ReturnObject();
         hstring Method();
         hstring Property();
         void Property(hstring);

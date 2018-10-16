@@ -3,6 +3,12 @@
 #include "winrt/impl/Component.2.h"
 namespace winrt::impl
 {
+    template <typename D> Component::Class consume_Component_IClass<D>::ReturnObject() const
+    {
+        void* result;
+        check_hresult(WINRT_SHIM(Component::IClass)->ReturnObject(&result));
+        return { construct_from_abi, result };
+    }
     template <typename D> hstring consume_Component_IClass<D>::Method() const
     {
         void* result;
@@ -31,34 +37,6 @@ namespace winrt::impl
         check_hresult(WINRT_SHIM(Component::IClassStatics)->StaticMethod(&result));
         return { construct_from_abi, result };
     }
-    template <typename D> hstring consume_Component_Class<D>::Method(Component::Class const& winrt_impl_this) const
-    {
-        void* result;
-        check_hresult(WINRT_SHIM(fast_factory<Component::Class>)->Method(get_abi(winrt_impl_this), &result));
-        return { construct_from_abi, result };
-    }
-    template <typename D> hstring consume_Component_Class<D>::Property(Component::Class const& winrt_impl_this) const
-    {
-        void* value;
-        check_hresult(WINRT_SHIM(fast_factory<Component::Class>)->get_Property(get_abi(winrt_impl_this), &value));
-        return { construct_from_abi, value };
-    }
-    template <typename D> void consume_Component_Class<D>::Property(Component::Class const& winrt_impl_this, param::hstring const& value) const
-    {
-        check_hresult(WINRT_SHIM(fast_factory<Component::Class>)->put_Property(get_abi(winrt_impl_this), get_abi(value)));
-    }
-    template <typename D> Component::Class consume_Component_Class<D>::CreateInstance(param::hstring const& a) const
-    {
-        void* value;
-        check_hresult(WINRT_SHIM(fast_factory<Component::Class>)->CreateInstance(get_abi(a), &value));
-        return { construct_from_abi, value };
-    }
-    template <typename D> hstring consume_Component_Class<D>::StaticMethod() const
-    {
-        void* result;
-        check_hresult(WINRT_SHIM(fast_factory<Component::Class>)->StaticMethod(&result));
-        return { construct_from_abi, result };
-    }
     template <> struct delegate<Component::Delegate>
     {
         template <typename H>
@@ -83,6 +61,18 @@ namespace winrt::impl
     template <typename D>
     struct produce<D, Component::IClass> : produce_base<D, Component::IClass>
     {
+        int32_t WINRT_CALL ReturnObject(void** result) noexcept final
+        {
+            try
+            {
+                *result = nullptr;
+                typename D::abi_guard guard(this->shim());
+                WINRT_ASSERT_DECLARATION(ReturnObject, WINRT_WRAP(Component::Class));
+                *result = detach_from<Component::Class>(this->shim().ReturnObject());
+                return 0;
+            }
+            catch (...) { return to_hresult(); }
+        }
         int32_t WINRT_CALL Method(void** result) noexcept final
         {
             try
@@ -151,84 +141,19 @@ namespace winrt::impl
             catch (...) { return to_hresult(); }
         }
     };
-    template <typename D>
-    struct produce<D, fast_factory<Component::Class>> : produce_base<D, fast_factory<Component::Class>>
-    {
-        int32_t WINRT_CALL ActivateInstance(void** result) noexcept final
-        {
-            try
-            {
-                *result = nullptr;
-                typename D::abi_guard guard(this->shim());
-                WINRT_ASSERT_DECLARATION(ActivateInstance, WINRT_WRAP(Component::Class));
-                *result = detach_abi(this->shim().ActivateInstance());
-                return 0;
-            }
-            catch (...) { return to_hresult(); }
-        }
-        int32_t WINRT_CALL Method(void* winrt_impl_this, void** result) noexcept final
-        {
-            try
-            {
-                *result = nullptr;
-                typename D::abi_guard guard(this->shim());
-                WINRT_ASSERT_DECLARATION(Method, WINRT_WRAP(hstring), Component::Class const&);
-                *result = detach_from<hstring>(this->shim().Method(*reinterpret_cast<Component::Class const*>(&winrt_impl_this)));
-                return 0;
-            }
-            catch (...) { return to_hresult(); }
-        }
-        int32_t WINRT_CALL get_Property(void* winrt_impl_this, void** value) noexcept final
-        {
-            try
-            {
-                *value = nullptr;
-                typename D::abi_guard guard(this->shim());
-                WINRT_ASSERT_DECLARATION(Property, WINRT_WRAP(hstring), Component::Class const&);
-                *value = detach_from<hstring>(this->shim().Property(*reinterpret_cast<Component::Class const*>(&winrt_impl_this)));
-                return 0;
-            }
-            catch (...) { return to_hresult(); }
-        }
-        int32_t WINRT_CALL put_Property(void* winrt_impl_this, void* value) noexcept final
-        {
-            try
-            {
-                typename D::abi_guard guard(this->shim());
-                WINRT_ASSERT_DECLARATION(Property, WINRT_WRAP(void), Component::Class const&, hstring const&);
-                this->shim().Property(*reinterpret_cast<Component::Class const*>(&winrt_impl_this), *reinterpret_cast<hstring const*>(&value));
-                return 0;
-            }
-            catch (...) { return to_hresult(); }
-        }
-        int32_t WINRT_CALL CreateInstance(void* a, void** value) noexcept final
-        {
-            try
-            {
-                *value = nullptr;
-                typename D::abi_guard guard(this->shim());
-                WINRT_ASSERT_DECLARATION(CreateInstance, WINRT_WRAP(Component::Class), hstring const&);
-                *value = detach_from<Component::Class>(this->shim().CreateInstance(*reinterpret_cast<hstring const*>(&a)));
-                return 0;
-            }
-            catch (...) { return to_hresult(); }
-        }
-        int32_t WINRT_CALL StaticMethod(void** result) noexcept final
-        {
-            try
-            {
-                *result = nullptr;
-                typename D::abi_guard guard(this->shim());
-                WINRT_ASSERT_DECLARATION(StaticMethod, WINRT_WRAP(hstring));
-                *result = detach_from<hstring>(this->shim().StaticMethod());
-                return 0;
-            }
-            catch (...) { return to_hresult(); }
-        }
-    };
 }
 namespace winrt::Component
 {
+inline hstring Class::StaticMethod()
+{
+    return impl::call_factory<Class, Component::IClassStatics>([&](auto&& f) { return f.StaticMethod(); });
+}
+inline Class::Class(param::hstring const& a) :
+    Class(impl::call_factory<Class, Component::IClassFactory>([&](auto&& f) { return f.CreateInstance(a); }))
+{}
+inline Class::Class() :
+    Class(impl::call_factory<Class>([](auto&& f) { return f.template ActivateInstance<Class>(); }))
+{}
     template <typename L> Delegate::Delegate(L handler) :
         Delegate(impl::make_delegate<Delegate>(std::forward<L>(handler)))
     {}

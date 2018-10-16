@@ -24,10 +24,4 @@ namespace winrt::Component
 }
 namespace winrt
 {
-    template <> struct fast_factory<Component::Class> :
-        Windows::Foundation::IInspectable,
-        impl::consume_t<fast_factory<Component::Class>>
-    {
-        fast_factory(std::nullptr_t = nullptr) noexcept {}
-    };
 }

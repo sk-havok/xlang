@@ -1,11 +1,13 @@
 namespace Component
 {
-    [Windows.Foundation.Metadata.FastAbiAttribute]
     runtimeclass Class
     {
+        Class();
         Class(String a);
 
         static String StaticMethod();
+
+        Class ReturnObject();
 
         String Method();
 

@@ -13,24 +13,12 @@ namespace winrt::Component
         template <typename O, typename M> Delegate(weak_ref<O>&& object, M method);
         void operator()(param::hstring const& arg) const;
     };
-    struct WINRT_EBO Class : Windows::Foundation::IInspectable
+    struct WINRT_EBO Class :
+        Component::IClass
     {
-        using base_type = Windows::Foundation::IInspectable;
-
         Class(std::nullptr_t) noexcept {}
-        ~Class() noexcept;
-        Class(construct_from_abi_t, void* ptr) noexcept;
-        Class(Class const& other) noexcept;
-        Class(Class&&) noexcept = default;
-        Class& operator=(Class const& other) noexcept;
-        Class& operator=(Class&& other) noexcept;
-        Class& operator=(std::nullptr_t) noexcept;
-        void attach_abi(void* ptr) noexcept;
-        void* detach_abi() noexcept;
         Class(param::hstring const& a);
-        static hstring StaticMethod();
-        hstring Method() const;
-        hstring Property() const;
-        void Property(param::hstring const& value) const;
-    };
+    Class();
+    static hstring StaticMethod();
+};
 }

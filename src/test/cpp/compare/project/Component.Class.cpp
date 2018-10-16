@@ -2,7 +2,12 @@
 #include "Class.h"
 
 namespace winrt::Component::implementation
-{    hstring Class::Method()
+{
+    Component::Class Class::ReturnObject()
+    {
+        throw hresult_not_implemented();
+    }
+    hstring Class::Method()
     {
         throw hresult_not_implemented();
     }
