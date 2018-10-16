@@ -280,9 +280,10 @@ static PyType_Spec @_Type_spec =
             break;
         case param_category::pass_array:
         {
-            auto baz = std::get_if<ElementType>(&(param.second->Type().Type()));
-            if (baz && *baz == ElementType::Boolean)
+            auto element_type = std::get_if<ElementType>(&(param.second->Type().Type()));
+            if (element_type && *element_type == ElementType::Boolean)
             {
+                // have to specialize for bool due to C++'s custom implementation of vector<bool>
                 w.write("            auto _param% = py::convert_pass_array<%>(args, %);\n", sequence, param.second->Type(), sequence);
                 w.write("            auto param% = winrt::array_view<const %>(_param%.begin(), _param%.end());\n", sequence, param.second->Type(), sequence, sequence);
             }
@@ -290,13 +291,7 @@ static PyType_Spec @_Type_spec =
             {
                 w.write("            auto param% = py::convert_pass_array<%>(args, %);\n", sequence, param.second->Type(), sequence);
             }
-            //if (auto et = std::get_if<ElementType>(param.second->Type().Type()))
-            //{
-
-            //}
         }
-            //w.write("            auto param% = py::convert_pass_array<%>(args, %);\n", sequence, param.second->Type(), sequence);
-            //w.write("            winrt::array_view<const %> param%(_param%.begin(), _param%.end());\n", param.second->Type(), sequence, sequence, sequence);
             break;
         case param_category::fill_array:
             w.write("            /*f*/ winrt::array_view<%> param% { }; //= py::convert_to<winrt::array_view<% const>>(args, %);\n", param.second->Type(), sequence, param.second->Type(), sequence);

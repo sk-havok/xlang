@@ -799,6 +799,7 @@ namespace py
 
         if constexpr (std::is_same_v<T, bool>)
         {
+            // have to specialize for bool due to C++'s custom implementation of vector<bool>
             winrt::com_array<bool> items(static_cast<uint32_t>(list_size));
 
             for (Py_ssize_t index = 0; index < list_size; index++)
