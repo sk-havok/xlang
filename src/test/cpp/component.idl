@@ -1,4 +1,4 @@
-namespace Compare
+namespace Component
 {
     [Windows.Foundation.Metadata.FastAbiAttribute]
     runtimeclass Class
@@ -9,6 +9,7 @@ namespace Compare
 
         String Method();
 
+        String Property;
     }
 
     delegate void Delegate(String arg);
